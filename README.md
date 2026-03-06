@@ -1,8 +1,8 @@
 $schema: https://raw.githubusercontent.com/tabarra/txAdmin-recipe-schema/main/schema.json
 
-name: QBCore RP Server Pack
+name: Complete FivePD Server Stack
 author: Custom
-description: Full QBCore server with vMenu, RP Essentials, vehicles, admin perms, Discord logs, and txAdmin integration
+description: Full FivePD RP server with Qbox, vMenu, vehicle packs, Discord logs, admin permissions, and txAdmin integration
 
 variables:
   steam_webapi:
@@ -10,12 +10,12 @@ variables:
     type: string
 
   discord_webhook:
-    prompt: Discord Log Webhook URL
+    prompt: Discord Logging Webhook URL
     type: string
 
 tasks:
 
-# Create directory structure
+# Create folder structure
   - action: ensure_dir
     path: ./resources/[qb]
 
@@ -25,59 +25,59 @@ tasks:
   - action: ensure_dir
     path: ./resources/[vehicles]
 
-# Install QBCore
+  - action: ensure_dir
+    path: ./resources/[utils]
+
+# Qbox Framework
   - action: download_github
-    src: qbcore-framework/qb-core
+    src: qbox-framework/qbox-core
     ref: main
-    dest: ./resources/[qb]/qb-core
+    dest: ./resources/[qb]/qbox-core
 
   - action: download_github
-    src: qbcore-framework/qb-spawn
+    src: qbox-framework/qbox-jobs
     ref: main
-    dest: ./resources/[qb]/qb-spawn
+    dest: ./resources/[qb]/qbox-jobs
 
+# FivePD
   - action: download_github
-    src: qbcore-framework/qb-inventory
+    src: GitHubUser/FivePD
     ref: main
-    dest: ./resources/[qb]/qb-inventory
+    dest: ./resources/[standalone]/fivepd
 
-  - action: download_github
-    src: qbcore-framework/qb-management
-    ref: main
-    dest: ./resources/[qb]/qb-management
-
-  - action: download_github
-    src: qbcore-framework/qb-adminmenu
-    ref: main
-    dest: ./resources/[qb]/qb-adminmenu
-
-# Install vMenu
+# vMenu Admin
   - action: download_github
     src: TomGrobbe/vMenu
     ref: master
     dest: ./resources/[standalone]/vmenu
 
-# RP Essentials
+# Dispatch / Callouts
   - action: download_github
     src: Project-Sloth/ps-dispatch
     ref: main
-    dest: ./resources/[standalone]/ps-dispatch
+    dest: ./resources/[standalone]/pd-dispatch
 
-# Discord Logging
-  - action: download_github
-    src: qbcore-framework/qb-smallresources
-    ref: main
-    dest: ./resources/[qb]/qb-smallresources
-
-# Vehicle Pack Loader Example
+# Vehicle packs
   - action: download_file
     url: https://github.com/citizenfx/cfx-server-data/archive/refs/heads/master.zip
-    path: ./tmp/vehicles.zip
+    path: ./tmp/vehiclepacks.zip
 
-# Database
+# Discord Logging Scripts
+  - action: download_github
+    src: qbox-framework/qbox-logging
+    ref: main
+    dest: ./resources/[utils]/discord-logger
+
+# Anti-Cheat (optional but recommended)
+  - action: download_github
+    src: guardian-ac/guardian
+    ref: main
+    dest: ./resources/[utils]/anti-cheat
+
+# Database connection
   - action: connect_database
 
-# Server CFG setup
+# Server.cfg setup
   - action: write_file
     file: ./server.cfg
     data: |
@@ -86,29 +86,27 @@ tasks:
 
       set steam_webApiKey "{{steam_webapi}}"
 
-      sv_hostname "QBCore RP Server"
+      sv_hostname "Qbox FivePD RP Server"
       sv_maxclients 64
       set sv_enforceGameBuild 2944
-
       setr txAdmin-menuEnabled true
 
-      # Admin Permissions
-      add_ace group.admin command allow
+      # ACE / Admin Permissions
       add_ace group.superadmin command allow
+      add_ace group.admin command allow
 
       # Resources
-      ensure qb-core
-      ensure qb-spawn
-      ensure qb-inventory
-      ensure qb-management
-      ensure qb-adminmenu
-      ensure qb-smallresources
+      ensure qbox-core
+      ensure qbox-jobs
+      ensure fivepd
       ensure vmenu
-      ensure ps-dispatch
+      ensure pd-dispatch
+      ensure discord-logger
+      ensure anti-cheat
 
-# Discord Logging Config
+# Discord Webhook Configuration
   - action: write_file
-    file: ./resources/[qb]/qb-smallresources/config.lua
+    file: ./resources/[utils]/discord-logger/config.lua
     data: |
       Config = {}
-      Config.DiscordWebhook = "{{discord_webhook}}"
+      Config.Webhook = "{{discord_webhook}}"
